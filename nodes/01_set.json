@@ -1,0 +1,32 @@
+{
+  "description": "n8n Set Node configuration — maps incoming data to pipeline fields",
+  "node_type": "n8n-nodes-base.set",
+  "fields": {
+    "raw_message": {
+      "source": "Incoming body text or manual input",
+      "n8n_expression": "={{ $json.body || $json.raw_message || $json.message }}",
+      "type": "string",
+      "required": true
+    },
+    "from_email": {
+      "source": "Sender email from metadata (if available)",
+      "n8n_expression": "={{ $json.from || $json.from_email || null }}",
+      "type": "string",
+      "required": false
+    },
+    "source": {
+      "source": "Channel the message arrived through",
+      "n8n_expression": "={{ $json.source || 'manual' }}",
+      "type": "string",
+      "required": false,
+      "examples": ["email", "form", "webhook", "manual"]
+    },
+    "timestamp": {
+      "source": "ISO datetime of receipt",
+      "n8n_expression": "={{ $now.toISO() }}",
+      "type": "string",
+      "required": true
+    }
+  },
+  "notes": "For manual testing, paste test inputs directly into the Set node fields. For production, wire the trigger output expressions above."
+}

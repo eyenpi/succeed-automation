@@ -1,0 +1,82 @@
+[
+  {
+    "id": 1,
+    "name": "Barcelona AI Programme",
+    "raw_message": "Hi there, we run an AI and machine learning summer programme in Barcelona for students aged 16-18. It's a two-week in-person experience covering neural networks, computer vision, and hands-on projects. We'd love to explore a partnership with Succeed to reach more students internationally.",
+    "from_email": null,
+    "source": "email",
+    "timestamp": "2026-04-08T10:00:00Z"
+  },
+  {
+    "id": 2,
+    "name": "School Counsellor / Medicine",
+    "raw_message": "Hello, I'm a school counsellor and several of our students have expressed interest in medicine enrichment programmes. Could you let me know what options are available through your platform?",
+    "from_email": null,
+    "source": "form",
+    "timestamp": "2026-04-08T10:05:00Z"
+  },
+  {
+    "id": 3,
+    "name": "LinkedIn Spam",
+    "raw_message": "Hey! I came across your profile and wanted to share an amazing opportunity. Our tool helps grow your LinkedIn network by 500% in 30 days. Check out our results at bit.ly/linkedin-boost — thousands of professionals are already using it!",
+    "from_email": "spammer@promos.xyz",
+    "source": "email",
+    "timestamp": "2026-04-08T10:10:00Z"
+  },
+  {
+    "id": 4,
+    "name": "Oxford Economics / £6,000",
+    "raw_message": "Dear Succeed Team, I'm the Dean of the Oxford Summer Economics Programme. We offer a selective, two-week residential programme for students aged 16-19, focusing on economics, finance, and global policy. Fee is £6,000 per student. We attract participants from 50+ countries and would be interested in a partnership to expand our reach. Please contact me at dean@oxford-econ.edu to arrange a call.",
+    "from_email": "dean@oxford-econ.edu",
+    "source": "email",
+    "timestamp": "2026-04-08T10:15:00Z"
+  },
+  {
+    "id": 5,
+    "name": "Online Coding Bootcamp",
+    "raw_message": "Hi, we're an online coding bootcamp offering web development and data science courses. We're interested in partnering with education platforms to reach a wider audience. Let us know if there's an opportunity to work together.",
+    "from_email": null,
+    "source": "webhook",
+    "timestamp": "2026-04-08T10:20:00Z"
+  },
+  {
+    "id": 6,
+    "name": "Empty String",
+    "raw_message": "",
+    "from_email": null,
+    "source": "webhook",
+    "timestamp": "2026-04-08T10:25:00Z"
+  },
+  {
+    "id": 7,
+    "name": "Obvious Spam",
+    "raw_message": "URGENT!!! Make $5000/day from home click here bit.ly/scam123",
+    "from_email": null,
+    "source": "email",
+    "timestamp": "2026-04-08T10:30:00Z"
+  },
+  {
+    "id": 8,
+    "name": "Parent Enquiry",
+    "raw_message": "Hi, I'm a parent. My daughter is 15 and interested in summer programmes abroad. Can you help?",
+    "from_email": "parent@gmail.com",
+    "source": "form",
+    "timestamp": "2026-04-08T10:35:00Z"
+  },
+  {
+    "id": 9,
+    "name": "Global STEM Challenge",
+    "raw_message": "We run the Global STEM Challenge for 14-18 year olds. 50+ countries. Fee $2,500. Contact: partnerships@globalstem.org",
+    "from_email": "partnerships@globalstem.org",
+    "source": "email",
+    "timestamp": "2026-04-08T10:40:00Z"
+  },
+  {
+    "id": 10,
+    "name": "Random Noise",
+    "raw_message": "ksjdhfkjsdhf random noise 12345 @@@",
+    "from_email": null,
+    "source": "webhook",
+    "timestamp": "2026-04-08T10:45:00Z"
+  }
+]
