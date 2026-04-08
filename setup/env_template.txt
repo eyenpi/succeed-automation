@@ -1,0 +1,9 @@
+# Required Environment Variables for n8n
+# Set these in n8n Settings > Variables, or as system environment variables.
+
+OPENAI_API_KEY=sk-...your-openai-api-key...
+
+# Airtable credentials (configured via n8n Credentials, not env vars)
+# - Airtable Personal Access Token: pat...
+# - Base ID: app...
+# - Table Name: Enquiries

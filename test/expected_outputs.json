@@ -1,0 +1,160 @@
+[
+  {
+    "id": 1,
+    "name": "Barcelona AI Programme",
+    "enquiry_category": "provider_opportunity",
+    "sender_type": "programme_provider",
+    "programme_topic": "AI",
+    "target_age_range": "16-18",
+    "location": "Barcelona",
+    "format": "in_person",
+    "fee_text": null,
+    "contact_email": null,
+    "intent": "partnership",
+    "processing_status": "ok",
+    "confidence_level": "medium",
+    "expected_score": 66,
+    "expected_tier": "medium",
+    "expected_action": "manual_review",
+    "expected_action_note": "Downgraded to manual_review: no contact channel available",
+    "needs_review": true,
+    "reply_draft": "NO_RESPONSE",
+    "factor_scores": {
+      "fit_to_succeed": 25,
+      "value_and_actionability": 18,
+      "completeness": 14,
+      "contactability": 0,
+      "strategic_signal": 9
+    }
+  },
+  {
+    "id": 2,
+    "name": "School Counsellor / Medicine",
+    "enquiry_category": "school_request",
+    "sender_type": "school",
+    "programme_topic": "medicine",
+    "processing_status": "ok",
+    "confidence_level": "low",
+    "expected_score": 41,
+    "expected_tier": "low",
+    "expected_action": "manual_review",
+    "expected_action_note": "Downgraded to manual_review: no contact channel available",
+    "needs_review": true,
+    "reply_draft": "NO_RESPONSE",
+    "factor_scores": {
+      "fit_to_succeed": 22,
+      "value_and_actionability": 12,
+      "completeness": 3,
+      "contactability": 0,
+      "strategic_signal": 4
+    }
+  },
+  {
+    "id": 3,
+    "name": "LinkedIn Spam",
+    "enquiry_category": "spam",
+    "processing_status": "spam",
+    "expected_score": 0,
+    "expected_tier": "spam",
+    "expected_action": "archive",
+    "needs_review": false,
+    "reply_draft": "NO_RESPONSE"
+  },
+  {
+    "id": 4,
+    "name": "Oxford Economics / £6,000",
+    "enquiry_category": "provider_opportunity",
+    "sender_type": "programme_provider",
+    "programme_topic": "economics",
+    "fee_text": "£6,000",
+    "fee_numeric": 6000,
+    "contact_email": "dean@oxford-econ.edu",
+    "processing_status": "ok",
+    "confidence_level": "high",
+    "expected_score": 89,
+    "expected_tier": "high",
+    "expected_action": "schedule_call",
+    "needs_review": true,
+    "reply_draft": "(AI-generated draft referencing Oxford economics programme)",
+    "factor_scores": {
+      "fit_to_succeed": 20,
+      "value_and_actionability": 25,
+      "completeness": 14,
+      "contactability": 10,
+      "strategic_signal": 20
+    }
+  },
+  {
+    "id": 5,
+    "name": "Online Coding Bootcamp",
+    "enquiry_category": "organisation_request",
+    "sender_type": "organisation",
+    "intent": "partnership",
+    "format": "online",
+    "processing_status": "ok",
+    "confidence_level": "low",
+    "expected_score": 26,
+    "expected_tier": "low",
+    "expected_action": "manual_review",
+    "needs_review": true,
+    "reply_draft": "NO_RESPONSE",
+    "factor_scores": {
+      "fit_to_succeed": 8,
+      "value_and_actionability": 10,
+      "completeness": 8,
+      "contactability": 0,
+      "strategic_signal": 0
+    }
+  },
+  {
+    "id": 6,
+    "name": "Empty String",
+    "processing_status": "extraction_failed",
+    "expected_score": 0,
+    "expected_tier": "failed",
+    "expected_action": "manual_review",
+    "needs_review": true,
+    "reply_draft": "NO_RESPONSE"
+  },
+  {
+    "id": 7,
+    "name": "Obvious Spam",
+    "processing_status": "spam",
+    "expected_score": 0,
+    "expected_tier": "spam",
+    "expected_action": "archive",
+    "needs_review": false,
+    "reply_draft": "NO_RESPONSE"
+  },
+  {
+    "id": 8,
+    "name": "Parent Enquiry",
+    "enquiry_category": "student_request",
+    "sender_type": "student",
+    "expected_tier": "medium",
+    "expected_action": "share_options",
+    "needs_review": false,
+    "reply_draft": "(AI-generated draft about summer programmes abroad)"
+  },
+  {
+    "id": 9,
+    "name": "Global STEM Challenge",
+    "enquiry_category": "provider_opportunity",
+    "sender_type": "programme_provider",
+    "target_age_range": "14-18",
+    "contact_email": "partnerships@globalstem.org",
+    "fee_numeric": 2500,
+    "expected_tier": "high",
+    "expected_action": "schedule_call",
+    "needs_review": true,
+    "reply_draft": "(AI-generated draft about Global STEM Challenge partnership)"
+  },
+  {
+    "id": 10,
+    "name": "Random Noise",
+    "expected_tier": "failed",
+    "expected_action": "manual_review",
+    "needs_review": true,
+    "reply_draft": "NO_RESPONSE"
+  }
+]

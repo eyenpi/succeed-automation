@@ -1,0 +1,67 @@
+name: Deploy to n8n
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'workflow/**'
+      - 'nodes/**'
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Rebuild workflow JSON with latest node code
+        run: |
+          node -e "
+          const fs = require('fs');
+          const wf = JSON.parse(fs.readFileSync('workflow/succeed_intake.json', 'utf8'));
+
+          const codeFiles = {
+            'Build Extract Prompt': 'nodes/02a_build_extract_prompt.js',
+            'Process Extraction': 'nodes/02b_process_extraction.js',
+            'Validate': 'nodes/03_validate.js',
+            'Score': 'nodes/04_score.js',
+            'Route': 'nodes/05_route.js',
+            'Build Reply Prompt': 'nodes/06a_build_reply_prompt.js',
+            'Process Reply': 'nodes/06b_process_reply.js',
+          };
+
+          for (const [nodeName, filePath] of Object.entries(codeFiles)) {
+            const code = fs.readFileSync(filePath, 'utf8').trim();
+            const node = wf.nodes.find(n => n.name === nodeName);
+            if (node) {
+              node.parameters.jsCode = code;
+              console.log('Updated:', nodeName);
+            }
+          }
+
+          fs.writeFileSync('workflow/succeed_intake.json', JSON.stringify(wf, null, 2));
+          console.log('Workflow JSON rebuilt');
+          "
+
+      - name: Deploy to n8n
+        env:
+          N8N_URL: ${{ secrets.N8N_URL }}
+          N8N_API_KEY: ${{ secrets.N8N_API_KEY }}
+          WORKFLOW_ID: ${{ secrets.N8N_WORKFLOW_ID }}
+        run: |
+          HTTP_CODE=$(curl -s -o /tmp/response.json -w "%{http_code}" -X PUT \
+            "$N8N_URL/api/v1/workflows/$WORKFLOW_ID" \
+            -H "X-N8N-API-KEY: $N8N_API_KEY" \
+            -H "Content-Type: application/json" \
+            -d @workflow/succeed_intake.json)
+
+          if [ "$HTTP_CODE" = "200" ]; then
+            echo "Deployed successfully to n8n"
+          else
+            echo "Deploy failed (HTTP $HTTP_CODE):"
+            cat /tmp/response.json
+            exit 1
+          fi
