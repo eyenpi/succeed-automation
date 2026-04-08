@@ -6,7 +6,6 @@
 //   node test/run_e2e.js --send          Send inputs to n8n + evaluate Airtable results
 //   node test/run_e2e.js --evaluate      Evaluate existing Airtable results only
 //   node test/run_e2e.js --clean         Delete all Airtable records, then send + evaluate
-//   node test/run_e2e.js --adversarial   Include adversarial test cases
 //
 // Environment variables (or .env file):
 //   AIRTABLE_PAT       — Airtable Personal Access Token
@@ -48,7 +47,6 @@ const AIRTABLE_API = `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${AIRTABLE
 const args = process.argv.slice(2);
 const MODE_SEND = args.includes("--send") || args.includes("--clean");
 const MODE_CLEAN = args.includes("--clean");
-const INCLUDE_ADVERSARIAL = args.includes("--adversarial");
 const DELAY_MS = parseInt(args.find((a) => a.startsWith("--delay="))?.split("=")[1] || "3000", 10);
 
 if (!AIRTABLE_PAT || !AIRTABLE_BASE_ID || !AIRTABLE_TABLE_ID) {
@@ -173,7 +171,24 @@ const FIELD_MAP = {
   "Next Action": "expected_action",
   "Needs Review": "needs_review",
   "Action Note": "expected_action_note",
+  // LLM Evaluation fields
+  "Eval Status": "eval_status",
+  "Eval Spam": "eval_spam_verdict",
+  "Eval Institution": "eval_institution_verdict",
+  "Eval Fee": "eval_fee_verdict",
+  "Eval Audience": "eval_audience_verdict",
+  "Rule Score": "rule_score",
+  "Rule Tier": "rule_tier",
+  "Rule Action": "rule_action",
 };
+
+// Eval verdict fields use WARN severity (LLM outputs vary)
+const EVAL_VERDICT_FIELDS = new Set([
+  "eval_spam_verdict",
+  "eval_institution_verdict",
+  "eval_fee_verdict",
+  "eval_audience_verdict",
+]);
 
 function evaluateRecord(actual, expected) {
   const issues = [];
@@ -199,8 +214,8 @@ function evaluateRecord(actual, expected) {
       continue;
     }
 
-    // Score: allow +/- 5 tolerance
-    if (expectedKey === "expected_score" && typeof expectedVal === "number") {
+    // Score: allow +/- 5 tolerance (rule score or priority score)
+    if ((expectedKey === "expected_score" || expectedKey === "rule_score") && typeof expectedVal === "number") {
       const diff = Math.abs((actualVal || 0) - expectedVal);
       if (diff > 5) {
         issues.push({
@@ -236,10 +251,14 @@ function evaluateRecord(actual, expected) {
       const a = String(actualVal || "").toLowerCase().trim();
       const e = String(expectedVal).toLowerCase().trim();
       if (a !== e) {
+        // Eval verdict fields use WARN severity (LLM non-determinism)
+        const isEvalVerdict = EVAL_VERDICT_FIELDS.has(expectedKey);
         const isCritical =
-          expectedKey === "processing_status" ||
-          expectedKey === "expected_action" ||
-          expectedKey === "expected_tier";
+          !isEvalVerdict && (
+            expectedKey === "processing_status" ||
+            expectedKey === "expected_action" ||
+            expectedKey === "expected_tier"
+          );
         issues.push({
           field: airtableField,
           expected: expectedVal,
@@ -333,23 +352,11 @@ function printReport(results) {
 // --- Main ---
 
 async function main() {
-  // Load test data
+  // Load test data (single merged file for all inputs and expected outputs)
   const inputsPath = path.resolve(__dirname, "inputs.json");
   const expectedPath = path.resolve(__dirname, "expected_outputs.json");
-  const inputs = JSON.parse(fs.readFileSync(inputsPath, "utf8"));
-  const expected = JSON.parse(fs.readFileSync(expectedPath, "utf8"));
-
-  let allInputs = [...inputs];
-  let allExpected = [...expected];
-
-  if (INCLUDE_ADVERSARIAL) {
-    const advInputsPath = path.resolve(__dirname, "inputs_adversarial.json");
-    const advExpectedPath = path.resolve(__dirname, "expected_outputs_adversarial.json");
-    if (fs.existsSync(advInputsPath) && fs.existsSync(advExpectedPath)) {
-      allInputs = allInputs.concat(JSON.parse(fs.readFileSync(advInputsPath, "utf8")));
-      allExpected = allExpected.concat(JSON.parse(fs.readFileSync(advExpectedPath, "utf8")));
-    }
-  }
+  const allInputs = JSON.parse(fs.readFileSync(inputsPath, "utf8"));
+  const allExpected = JSON.parse(fs.readFileSync(expectedPath, "utf8"));
 
   console.log(`Loaded ${allInputs.length} inputs, ${allExpected.length} expected outputs.`);
 
