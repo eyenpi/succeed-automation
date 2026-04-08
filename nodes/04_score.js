@@ -32,16 +32,19 @@ if (input.processing_status === "spam") {
   }];
 }
 
-if (input.processing_status === "spam_suspected") {
-  return [{
-    json: {
-      ...input,
-      score: 0,
-      tier: "spam",
-      factor_scores: { fit_to_succeed: 0, value_and_actionability: 0, completeness: 0, contactability: 0, strategic_signal: 0 },
-      factor_evidence: { fit_to_succeed: "Spam suspected", value_and_actionability: "N/A", completeness: "N/A", contactability: "N/A", strategic_signal: "N/A" },
-    }
-  }];
+// spam_suspected records are scored normally — they route to manual_review
+// via the routing node but still get a meaningful score for human triage.
+
+// --- Helper: check if age range overlaps Succeed's 14-19 target audience ---
+
+function ageOverlapsSucceed(ageRange) {
+  if (!ageRange) return false;
+  const nums = ageRange.match(/\d+/g);
+  if (!nums || nums.length === 0) return false;
+  const min = parseInt(nums[0], 10);
+  const max = nums.length > 1 ? parseInt(nums[nums.length - 1], 10) : min;
+  // Succeed targets students aged 14-19
+  return min <= 19 && max >= 14;
 }
 
 // --- Factor 1: Fit to Succeed (25 pts) ---
@@ -51,10 +54,14 @@ function scoreFit(d) {
   const sender = d.sender_type;
   const hasAge = !!d.target_age_range;
   const hasTopic = !!d.programme_topic;
+  const ageOverlaps = ageOverlapsSucceed(d.target_age_range);
 
   if (cat === "provider_opportunity") {
-    if (sender === "programme_provider" && hasAge) {
+    if (sender === "programme_provider" && hasAge && ageOverlaps) {
       return { score: 25, evidence: `Programme provider targeting ${d.target_age_range} — direct Succeed audience fit` };
+    }
+    if (sender === "programme_provider" && hasAge && !ageOverlaps) {
+      return { score: 8, evidence: `Programme provider targeting ${d.target_age_range} — outside Succeed's 14-19 audience` };
     }
     if (sender === "programme_provider") {
       return { score: 20, evidence: "Programme provider, age range not stated" };
@@ -189,7 +196,7 @@ function scoreStrategic(d) {
   // International location or language
   const internationalPattern = /\b(international|global|worldwide|countries)\b/i;
   const isInternational = internationalPattern.test(d.raw_message || "") ||
-    (d.location && !["uk", "united kingdom", "england", "usa", "united states"].includes(d.location.toLowerCase()));
+    (d.location && !["uk", "united kingdom", "england", "london", "edinburgh", "manchester", "birmingham", "usa", "united states", "new york", "boston"].includes(d.location.toLowerCase()));
   if (isInternational) {
     total += 5;
     signals.push(d.location ? `International: ${d.location} (+5)` : "Global reach language (+5)");
