@@ -5,7 +5,13 @@
 
 // Original input data (from the Build Reply Prompt node)
 const promptNode = $('Build Reply Prompt').first().json;
-const { _requestBody, ...originalInput } = promptNode;
+const { _requestBody, _skipReply, ...originalInput } = promptNode;
+
+// --- Guard: If reply was skipped, pass through ---
+
+if (_skipReply) {
+  return [{ json: { ...originalInput, reply_draft: "NO_RESPONSE" } }];
+}
 
 // API response (from the HTTP Request node)
 const apiResponse = $input.first().json;

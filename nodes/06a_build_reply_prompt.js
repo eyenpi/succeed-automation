@@ -6,6 +6,19 @@
 
 const input = $input.first().json;
 
+// --- Guard: Skip actions that don't need a reply ---
+// archive and manual_review don't get AI-generated drafts.
+
+if (["archive", "manual_review"].includes(input.action)) {
+  return [{
+    json: {
+      ...input,
+      reply_draft: "NO_RESPONSE",
+      _skipReply: true,
+    }
+  }];
+}
+
 const senderName = input.sender_name || "Unknown sender";
 const programmeName = input.programme_name || "Not specified";
 const programmeTopic = input.programme_topic || "Not specified";
@@ -30,8 +43,6 @@ Rules by action:
 - schedule_call: Be warm and specific. Reference their programme by name. Propose a 15-minute introductory call this week. Mention Succeed's student audience.
 - request_info: Acknowledge their interest. Ask the specific questions listed in "Questions to ask" above, rephrased naturally into your email. Do NOT use internal field names. Keep it inviting, not transactional.
 - share_options: Acknowledge their need. Briefly explain how Succeed can help. Invite them to explore relevant options or suggest a next step.
-- manual_review: Write a polite acknowledgement. Let them know their enquiry has been received and the team will follow up shortly. Keep it brief and warm.
-- archive: Write a brief, polite response thanking them for reaching out. Keep it generic and professional.
 
 Constraints:
 - Under 80 words for schedule_call and share_options; under 120 words for request_info (needs room for multiple questions)

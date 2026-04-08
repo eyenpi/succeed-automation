@@ -7,12 +7,12 @@
 
 const input = { ...$input.first().json };
 
-// --- 1. Extraction Failure Gate ---
+// --- Helper: return extraction-failed result ---
 
-if (input._extractionFailed) {
+function extractionFailedResult(inp, reason) {
   return [{
     json: {
-      ...input,
+      ...inp,
       enquiry_category: "unknown",
       sender_type: "unknown",
       sender_name: null,
@@ -32,9 +32,22 @@ if (input._extractionFailed) {
       evidence: {},
       processing_status: "extraction_failed",
       confidence_level: "low",
-      validation_flags: ["extraction_failed"],
+      validation_flags: [reason],
     }
   }];
+}
+
+// --- 1. Extraction Failure Gate ---
+
+if (input._extractionFailed) {
+  return extractionFailedResult(input, "extraction_failed");
+}
+
+// --- 1b. Empty / whitespace-only input ---
+
+const trimmedMessage = (input.raw_message || "").trim();
+if (!trimmedMessage) {
+  return extractionFailedResult(input, "extraction_failed_empty_input");
 }
 
 // --- Initialize validation_flags ---
@@ -59,10 +72,21 @@ for (const [field, allowed] of Object.entries(ALLOWED)) {
 
 // --- 3. Deterministic Spam Detection ---
 
-const rawLower = (input.raw_message || "").toLowerCase();
-let spam_signal_count = 0;
+const rawMessage = input.raw_message || "";
 
-// Phrase patterns
+// Strip quoted text (single/double quotes) so references to spam don't trigger rules.
+// E.g. a counsellor quoting "click here" in a scam warning won't be flagged.
+const textForSpamCheck = rawMessage
+  .replace(/'[^']*'/g, " ")
+  .replace(/"[^"]*"/g, " ");
+
+// Track strong vs weak spam signals separately.
+// Strong: phrase matches and link shorteners (high-confidence spam indicators).
+// Weak: suspicious TLDs alone (many legitimate providers use .xyz).
+let strong_signal_count = 0;
+let has_tld_signal = false;
+
+// Phrase patterns (strong signals)
 const spamPhrases = [
   /grow your linkedin/i,
   /check out our tool/i,
@@ -77,35 +101,54 @@ const spamPhrases = [
 ];
 
 for (const pattern of spamPhrases) {
-  if (pattern.test(input.raw_message || "")) {
-    spam_signal_count++;
+  if (pattern.test(textForSpamCheck)) {
+    strong_signal_count++;
     validation_flags.push(`spam_phrase: ${pattern.source}`);
   }
 }
 
-// Suspicious TLDs
-if (/\.(xyz|tk)\b/i.test(input.raw_message || "") || /\.(xyz|tk)\b/i.test(input.from_email || "")) {
-  spam_signal_count++;
-  validation_flags.push("spam_suspicious_tld");
-}
-
-// Link shorteners
-if (/(bit\.ly|tinyurl)/i.test(input.raw_message || "")) {
-  spam_signal_count++;
+// Link shorteners (strong signal)
+if (/(bit\.ly|tinyurl)/i.test(textForSpamCheck)) {
+  strong_signal_count++;
   validation_flags.push("spam_link_shortener");
 }
 
-// Apply spam signals
-if (spam_signal_count >= 2) {
+// Suspicious TLDs (weak signal — only contributes alongside strong signals)
+if (/\.(xyz|tk)\b/i.test(textForSpamCheck) || /\.(xyz|tk)\b/i.test(input.from_email || "")) {
+  has_tld_signal = true;
+  validation_flags.push("spam_suspicious_tld");
+}
+
+// Total signal count: TLD only counts when combined with strong signals
+const spam_signal_count = strong_signal_count + (has_tld_signal && strong_signal_count > 0 ? 1 : 0);
+
+// The AI extraction provides context-aware classification. When the AI says the
+// enquiry is legitimate (not spam/unknown) but deterministic rules find signals,
+// use spam_suspected instead of hard spam — the AI understood the context.
+const aiSaysLegitimate = input.enquiry_category &&
+  !["spam", "unknown"].includes(input.enquiry_category);
+
+// Apply spam signals.
+// When the AI says the enquiry is legitimate, we trust its contextual understanding
+// for single signals (e.g. "crypto" in an educational context). Only escalate to
+// spam_suspected when there are 2+ strong signals despite AI disagreement.
+if (spam_signal_count >= 2 && !aiSaysLegitimate) {
   input.enquiry_category = "spam";
   input.processing_status = "spam";
   validation_flags.push("spam_override_by_rules");
-} else if (spam_signal_count === 1) {
+} else if (spam_signal_count >= 2 && aiSaysLegitimate) {
+  // AI thinks it's legit but multiple spam signals — flag for review, don't override
+  input.processing_status = "spam_suspected";
+  validation_flags.push("spam_suspected_ai_disagrees");
+} else if (strong_signal_count >= 1 && !aiSaysLegitimate) {
+  // Single signal and AI agrees it's spam/unknown — flag as suspected
   if (!input.processing_status || input.processing_status === "ok") {
     input.processing_status = "spam_suspected";
   }
   validation_flags.push("spam_suspected_single_signal");
 }
+// When strong_signal_count === 1 && aiSaysLegitimate: trust the AI.
+// The validation_flags still record the signal for auditability.
 
 // --- 4. Email Validation ---
 
@@ -128,13 +171,21 @@ if (!input.contact_email && input.from_email && emailRegex.test(input.from_email
 }
 
 // --- 6. Fee Normalization ---
+// Extract the first recognisable currency amount from fee_text.
+// Handles formats like "£6,000", "EUR 1,200", "$250,000 per student", "€2,900".
 
 let fee_numeric = null;
 if (input.fee_text) {
-  const cleaned = input.fee_text.replace(/[^0-9.]/g, "");
-  const parsed = parseFloat(cleaned);
-  if (!isNaN(parsed)) {
-    fee_numeric = parsed;
+  // Match the first number that may contain commas or dots as thousands separators
+  // e.g. "6,000", "2900", "4,800", "3 500", "250,000"
+  const feeMatch = input.fee_text.match(/[\d][\d,.\s]*[\d]|[\d]+/);
+  if (feeMatch) {
+    // Remove thousands separators (commas and spaces), keep decimal point
+    const cleaned = feeMatch[0].replace(/[,\s]/g, "");
+    const parsed = parseFloat(cleaned);
+    if (!isNaN(parsed)) {
+      fee_numeric = parsed;
+    }
   }
 }
 input.fee_numeric = fee_numeric;
@@ -155,7 +206,8 @@ if (input.target_age_range) {
 // --- 8. Confidence Level ---
 
 const missingCount = (input.missing_fields || []).length;
-const hasSpamOverride = spam_signal_count > 0;
+// Only downgrade confidence if spam signals actually changed the processing status
+const hasSpamOverride = input.processing_status === "spam" || input.processing_status === "spam_suspected";
 
 let confidence_level;
 if (missingCount <= 2 && !hasSpamOverride) {
